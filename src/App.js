@@ -138,7 +138,7 @@ function calculateWinner(squares) {
 ///////
 
 function minimax(board, depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) {
-// with Alpha-Beta Pruning optimization
+  // Check for terminal states
   if (hasPlayerWon(board, 'X')) {
       return {score: -1};
   }
@@ -149,51 +149,39 @@ function minimax(board, depth, isMaximizingPlayer, alpha = -Infinity, beta = Inf
       return {score: 0};
   }
 
-  if (isMaximizingPlayer) {
-      let bestScore = -Infinity;
-      let move = null;
-      for (let i = 0; i < 3; i++) {
-          for (let j = 0; j < 3; j++) {
-              if (board[i][j] == null) {
-                  board[i][j] = 'O';
-                  let result = minimax(board, depth + 1, false, alpha, beta);
-                  board[i][j] = null;
-                  if (result.score > bestScore) {
-                      bestScore = result.score;
-                      move = { i, j };
-                  }
-                  alpha = Math.max(alpha, result.score);
-                  if (beta <= alpha) {
-                      return {score: bestScore, move: move};
-                  }
-              }
-          }
-      }
-      return {score: bestScore, move: move};
+  // Initialize best score and move
+  let bestScore = isMaximizingPlayer ? -Infinity : Infinity;
+  let move = null;
 
-  } else {
-      let bestScore = Infinity;
-      let move = null;
-      for (let i = 0; i < 3; i++) {
-          for (let j = 0; j < 3; j++) {
-              if (board[i][j] == null) {
-                  board[i][j] = 'X';
-                  let result = minimax(board, depth + 1, true, alpha, beta);
-                  board[i][j] = null;
-                  if (result.score < bestScore) {
-                      bestScore = result.score;
-                      move = { i, j };
-                  }
-                  beta = Math.min(beta, result.score);
-                  if (beta <= alpha) {
-                      return {score: bestScore, move: move};
-                  }
-              }
-          }
+  // Loop through the board to find the best move
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (board[i][j] == null) {
+        // Try the move
+        board[i][j] = isMaximizingPlayer ? 'O' : 'X';
+        let result = minimax(board, depth + 1, !isMaximizingPlayer, alpha, beta);
+        board[i][j] = null;
+
+        // Update best score and move
+        if (isMaximizingPlayer && result.score > bestScore) {
+            bestScore = result.score;
+            move = { i, j };
+            alpha = Math.max(alpha, result.score);
+        } else if (!isMaximizingPlayer && result.score < bestScore) {
+            bestScore = result.score;
+            move = { i, j };
+            beta = Math.min(beta, result.score);
+        }
+
+        // Alpha-beta pruning
+        if (beta <= alpha) {
+          console.log("Alpha-beta pruning");
+          return {score: bestScore, move: move};
+        }
       }
-      console.log({score: bestScore, move: move});
-      return {score: bestScore, move: move};
+    }
   }
+  return {score: bestScore, move: move};
 }
 
 
