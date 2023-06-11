@@ -137,42 +137,65 @@ function calculateWinner(squares) {
 // minmax
 ///////
 
-function minimax(board, depth, isMaximizingPlayer) {
-  if (hasPlayerWon(board, "X")) {
-    return { score: -1 };
+function minimax(board, depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) {
+// with Alpha-Beta Pruning optimization
+  if (hasPlayerWon(board, 'X')) {
+      return {score: -1};
   }
-  if (hasPlayerWon(board, "O")) {
-    return { score: 1 };
+  if (hasPlayerWon(board, 'O')) {
+      return {score: 1};
   }
   if (isBoardFull(board)) {
-    return { score: 0 };
+      return {score: 0};
   }
 
-  let bestScore = isMaximizingPlayer ? -Infinity : Infinity;
-  let move = null;
-
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      if (board[i][j] == null) {
-        board[i][j] = isMaximizingPlayer ? "O" : "X";
-        let result = minimax(board, depth + 1, !isMaximizingPlayer);
-        board[i][j] = null;
-        if (isMaximizingPlayer) {
-          if (result.score > bestScore) {
-            bestScore = result.score;
-            move = { i, j };
+  if (isMaximizingPlayer) {
+      let bestScore = -Infinity;
+      let move = null;
+      for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+              if (board[i][j] == null) {
+                  board[i][j] = 'O';
+                  let result = minimax(board, depth + 1, false, alpha, beta);
+                  board[i][j] = null;
+                  if (result.score > bestScore) {
+                      bestScore = result.score;
+                      move = { i, j };
+                  }
+                  alpha = Math.max(alpha, result.score);
+                  if (beta <= alpha) {
+                      return {score: bestScore, move: move};
+                  }
+              }
           }
-        } else {
-          if (result.score < bestScore) {
-            bestScore = result.score;
-            move = { i, j };
-          }
-        }
       }
-    }
+      return {score: bestScore, move: move};
+
+  } else {
+      let bestScore = Infinity;
+      let move = null;
+      for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+              if (board[i][j] == null) {
+                  board[i][j] = 'X';
+                  let result = minimax(board, depth + 1, true, alpha, beta);
+                  board[i][j] = null;
+                  if (result.score < bestScore) {
+                      bestScore = result.score;
+                      move = { i, j };
+                  }
+                  beta = Math.min(beta, result.score);
+                  if (beta <= alpha) {
+                      return {score: bestScore, move: move};
+                  }
+              }
+          }
+      }
+      console.log({score: bestScore, move: move});
+      return {score: bestScore, move: move};
   }
-  return { score: bestScore, move: move };
 }
+
 
 // Les fonctions isBoardFull et hasPlayerWon sont des exemples de fonctions que vous devrez implémenter.
 // Elles vérifient respectivement si le plateau de jeu est plein et si un joueur a gagné.
