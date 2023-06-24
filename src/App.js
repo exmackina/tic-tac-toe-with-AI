@@ -13,6 +13,7 @@ function Board({ xIsNext, squares, onPlay }) {
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
+    // créer une copie du tableau squares
     const nextSquares = squares.slice();
     if (xIsNext) {
       nextSquares[i] = "X";
@@ -65,19 +66,15 @@ export default function Game() {
 
     if (nextHistory.length % 2 === 0) {
       // Si c'est le tour de l'IA
-      // Convertir le plateau en 2D pour Minimax
-      let board2D = [];
-      for (let i = 0; i < 3; i++) {
-        board2D[i] = nextSquares.slice(i * 3, (i + 1) * 3);
-      }
 
       // Trouver le meilleur coup avec minimax
-      let result = minimax(board2D, 0, true);
+      let result = minimax(nextSquares, 0, true);
 
-      // Appliquer le meilleur coup (après avoir converti le plateau 2D en 1D)
-      if (result.move) {
-        nextSquares[result.move.i * 3 + result.move.j] = "O";
-        setHistory([...nextHistory, nextSquares]);
+      // Appliquer le meilleur coup
+      if (result.move != null) {
+        const squaresAfterAI = nextSquares.slice(); // faire une autre copie
+        squaresAfterAI[result.move] = "O";
+        setHistory([...nextHistory, squaresAfterAI]);
         setCurrentMove(nextHistory.length);
       }
     }
@@ -137,110 +134,65 @@ function calculateWinner(squares) {
 // minmax
 ///////
 
-function minimax(board, depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) {
+function minimax(
+  squares,
+  depth,
+  isMaximizingPlayer,
+  alpha = -Infinity,
+  beta = Infinity
+) {
   // Check for terminal states
-  if (hasPlayerWon(board, 'X')) {
-      return {score: -1};
+  let winner = calculateWinner(squares);
+  if (winner === "X") {
+    return { score: -1 };
   }
-  if (hasPlayerWon(board, 'O')) {
-      return {score: 1};
+  if (winner === "O") {
+    return { score: 1 };
   }
-  if (isBoardFull(board)) {
-      return {score: 0};
+  if (isBoardFull(squares)) {
+    return { score: 0 };
   }
 
   // Initialize best score and move
   let bestScore = isMaximizingPlayer ? -Infinity : Infinity;
   let move = null;
 
-  // Loop through the board to find the best move
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      if (board[i][j] == null) {
-        // Try the move
-        board[i][j] = isMaximizingPlayer ? 'O' : 'X';
-        let result = minimax(board, depth + 1, !isMaximizingPlayer, alpha, beta);
-        board[i][j] = null;
+  // Loop through the squares to find the best move
+  for (let i = 0; i < 9; i++) {
+    if (squares[i] == null) {
+      // Try the move
+      squares[i] = isMaximizingPlayer ? "O" : "X";
+      let result = minimax(
+        squares,
+        depth + 1,
+        !isMaximizingPlayer,
+        alpha,
+        beta
+      );
+      squares[i] = null;
 
-        // Update best score and move
-        if (isMaximizingPlayer && result.score > bestScore) {
-            bestScore = result.score;
-            move = { i, j };
-            alpha = Math.max(alpha, result.score);
-        } else if (!isMaximizingPlayer && result.score < bestScore) {
-            bestScore = result.score;
-            move = { i, j };
-            beta = Math.min(beta, result.score);
-        }
+      // Update best score and move
+      if (isMaximizingPlayer && result.score > bestScore) {
+        bestScore = result.score;
+        move = i;
+        alpha = Math.max(alpha, result.score);
+      } else if (!isMaximizingPlayer && result.score < bestScore) {
+        bestScore = result.score;
+        move = i;
+        beta = Math.min(beta, result.score);
+      }
 
-        // Alpha-beta pruning
-        if (beta <= alpha) {
-          console.log("Alpha-beta pruning");
-          return {score: bestScore, move: move};
-        }
+      // Alpha-beta pruning
+      if (beta <= alpha) {
+        console.log("Alpha-beta pruning");
+        return { score: bestScore, move: move };
       }
     }
   }
-  return {score: bestScore, move: move};
+  return { score: bestScore, move: move };
 }
 
-
-// Les fonctions isBoardFull et hasPlayerWon sont des exemples de fonctions que vous devrez implémenter.
-// Elles vérifient respectivement si le plateau de jeu est plein et si un joueur a gagné.
-
-function isBoardFull(board) {
-  // Retourne true si le plateau est plein, sinon false
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      if (board[i][j] == null) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-function hasPlayerWon(board, player) {
-  // Vérifie les lignes
-  for (let i = 0; i < 3; i++) {
-    if (
-      board[i][0] === player &&
-      board[i][1] === player &&
-      board[i][2] === player
-    ) {
-      return true;
-    }
-  }
-
-  // Vérifie les colonnes
-  for (let i = 0; i < 3; i++) {
-    if (
-      board[0][i] === player &&
-      board[1][i] === player &&
-      board[2][i] === player
-    ) {
-      return true;
-    }
-  }
-
-  // Vérifie la diagonale de gauche à droite
-  if (
-    board[0][0] === player &&
-    board[1][1] === player &&
-    board[2][2] === player
-  ) {
-    return true;
-  }
-
-  // Vérifie la diagonale de droite à gauche
-  if (
-    board[0][2] === player &&
-    board[1][1] === player &&
-    board[2][0] === player
-  ) {
-    return true;
-  }
-
-  // Si aucune des conditions ci-dessus n'est vraie, alors le joueur n'a pas gagné
-  return false;
+function isBoardFull(squares) {
+  // Retourne false si le plateau a au moins une case vide (null), sinon true
+  return !squares.includes(null);
 }
